@@ -59,7 +59,7 @@ Project-EyeNet is a comprehensive network monitoring and management system built
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/Project-EyeNet.git
+git clone https://github.com/tadashijei/Project-EyeNet.git
 cd Project-EyeNet
 ```
 
