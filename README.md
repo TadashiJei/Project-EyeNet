@@ -152,14 +152,6 @@ Project-EyeNet/
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Support
-
-For support, email support@eyenet.com or join our Slack channel.
-
 ## Acknowledgments
 
 - Material-UI for the awesome UI components
