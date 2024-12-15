@@ -10,11 +10,17 @@ This document provides a detailed description of the EyeNet backend API endpoint
 
 **Request Body:**
 
+*   `firstName` (String, required): The first name of the new user.
+*   `lastName` (String, required): The last name of the new user.
+*   `birthdate` (Date, optional): The birthdate of the new user.
 *   `username` (String, required): The username of the new user.
 *   `email` (String, required): The email address of the new user.
 *   `password` (String, required): The password of the new user.
 *   `role` (String, required, enum: `admin`, `user`): The role of the new user.
 *   `department` (String, optional): The department of the new user.
+*   `homeAddress` (String, optional): The home address of the new user.
+*   `country` (String, optional): The country of the new user.
+*   `phoneNumber` (String, optional): The phone number of the new user.
 
 **Response:**
 
@@ -55,11 +61,17 @@ This document provides a detailed description of the EyeNet backend API endpoint
 
 **Request Body:**
 
+*   `firstName` (String, optional): The new first name of the user.
+*   `lastName` (String, optional): The new last name of the user.
+*   `birthdate` (Date, optional): The new birthdate of the user.
 *   `username` (String, optional): The new username of the user.
 *   `email` (String, optional): The new email address of the user.
 *   `password` (String, optional): The new password of the user.
 *   `role` (String, optional, enum: `admin`, `user`): The new role of the user.
-*    `department` (String, optional): The new department of the user.
+*   `department` (String, optional): The new department of the user.
+*   `homeAddress` (String, optional): The new home address of the user.
+*   `country` (String, optional): The new country of the user.
+*   `phoneNumber` (String, optional): The new phone number of the user.
 
 **Response:**
 
@@ -186,7 +198,7 @@ This document provides a detailed description of the EyeNet backend API endpoint
 
 *   `address` (String, required): The IP address.
 *   `department` (String, optional): The department associated with the IP address.
-*   `usage` (Number, optional): The usage of the IP address.
+*   `usage` (Number, optional): The bandwidth usage of the IP address.
 
 **Response:**
 
@@ -225,7 +237,7 @@ This document provides a detailed description of the EyeNet backend API endpoint
 **Request Body:**
 
 *   `department` (String, optional): The new department associated with the IP address.
-*   `usage` (Number, optional): The new usage of the IP address.
+*   `usage` (Number, optional): The new bandwidth usage of the IP address.
 
 **Response:**
 

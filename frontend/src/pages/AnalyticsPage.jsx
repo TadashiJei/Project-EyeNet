@@ -5,8 +5,6 @@ import {
     Card,
     CardContent,
     Typography,
-    Tab,
-    Tabs,
     Stack,
     IconButton,
     Tooltip,
@@ -16,7 +14,6 @@ import {
     InputLabel,
     CircularProgress,
     Alert,
-    Divider,
     Button
 } from '@mui/material';
 import {
@@ -32,7 +29,6 @@ import {
 import {
     fetchBandwidthUsage,
     fetchApplicationUsage,
-    fetchPredictiveAnalytics,
     fetchNetworkHealth,
     fetchTopDevices,
     fetchAnomalies,
@@ -42,13 +38,11 @@ import {
 // Component imports
 import BandwidthUsageChart from '../components/analytics/BandwidthUsageChart';
 import ApplicationUsageChart from '../components/analytics/ApplicationUsageChart';
-import PredictiveAnalytics from '../components/analytics/PredictiveAnalytics';
 import AnalyticsCard from '../components/analytics/AnalyticsCard';
 import AnomaliesTimeline from '../components/analytics/AnomaliesTimeline';
 import TopDevicesTable from '../components/analytics/TopDevicesTable';
 
 const AnalyticsPage = () => {
-    const [activeTab, setActiveTab] = useState(0);
     const [timeRange, setTimeRange] = useState('24h');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -85,8 +79,6 @@ const AnalyticsPage = () => {
             },
         ],
     });
-
-    const [predictiveData, setPredictiveData] = useState([]);
 
     const analyticsCards = [
         {
@@ -130,14 +122,12 @@ const AnalyticsPage = () => {
             const [
                 bandwidthUsage,
                 appUsage,
-                predictions,
                 health,
                 devices,
                 anomaliesData
             ] = await Promise.all([
                 fetchBandwidthUsage(timeRange, interval),
                 fetchApplicationUsage(timeRange),
-                fetchPredictiveAnalytics(),
                 fetchNetworkHealth(),
                 fetchTopDevices(),
                 fetchAnomalies(timeRange)
@@ -174,33 +164,6 @@ const AnalyticsPage = () => {
                 ],
             });
 
-            // Update predictive analytics
-            setPredictiveData([
-                {
-                    metric: 'Bandwidth Usage',
-                    current: predictions.bandwidthUsage.current,
-                    predicted: predictions.bandwidthUsage.predicted,
-                    trend: predictions.bandwidthUsage.trend
-                },
-                {
-                    metric: 'Active Users',
-                    current: predictions.activeUsers.current,
-                    predicted: predictions.activeUsers.predicted,
-                    trend: predictions.activeUsers.trend
-                },
-                {
-                    metric: 'Network Latency',
-                    current: predictions.networkLatency.current,
-                    predicted: predictions.networkLatency.predicted,
-                    trend: predictions.networkLatency.trend
-                },
-                {
-                    metric: 'Packet Loss',
-                    current: predictions.packetLoss.current,
-                    predicted: predictions.packetLoss.predicted,
-                    trend: predictions.packetLoss.trend
-                }
-            ]);
 
             setNetworkHealth(health);
             setTopDevices(devices);

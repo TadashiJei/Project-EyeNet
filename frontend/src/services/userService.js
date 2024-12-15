@@ -1,7 +1,5 @@
 import api from './api';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5005/api';
-
 export const getCurrentUser = async () => {
     try {
         const response = await api.get('/users/me');

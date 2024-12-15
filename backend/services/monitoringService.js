@@ -4,6 +4,7 @@ const { EventEmitter } = require('events');
 const fs = require('fs').promises;
 const path = require('path');
 const notificationService = require('./notificationService');
+const { NetworkTraffic } = require('../models');
 
 class MonitoringService extends EventEmitter {
     constructor() {
@@ -107,15 +108,23 @@ class MonitoringService extends EventEmitter {
 
     async collectEyeNetMetrics() {
         try {
+            const departments = await this.getActiveDepartments();
+            const networkTrafficData = await Promise.all(
+                departments.map(async (department) => {
+                    const traffic = await NetworkTraffic.findOne({ departmentId: department.id }).sort({ timestamp: -1 });
+                    return traffic;
+                })
+            );
+
             const eyeNetMetrics = {
                 timestamp: Date.now(),
-                activeDepartments: await this.getActiveDepartments(),
+                activeDepartments: departments,
                 analyticsJobs: await this.getAnalyticsJobs(),
                 securityIncidents: await this.getSecurityIncidents(),
                 userActivity: await this.getUserActivity(),
                 modelPerformance: await this.getModelPerformance(),
                 resourceUtilization: await this.getResourceUtilization(),
-                networkTraffic: await this.getNetworkTraffic(),
+                networkTraffic: networkTrafficData,
                 predictionMetrics: await this.getPredictionMetrics()
             };
 
@@ -255,11 +264,11 @@ class MonitoringService extends EventEmitter {
 
     async getActiveDepartments() {
         // Implement department metrics collection
-        return {
-            total: 0,
-            active: 0,
-            inactive: 0
-        };
+        return [
+            { id: 'department1', name: 'Department 1' },
+            { id: 'department2', name: 'Department 2' },
+            { id: 'department3', name: 'Department 3' }
+        ];
     }
 
     async getAnalyticsJobs() {
@@ -525,6 +534,10 @@ class MonitoringService extends EventEmitter {
             timestamp: data.timestamp,
             value: data
         });
+    }
+
+    async getNetworkTraffic() {
+        return await NetworkTraffic.find({}).sort({ timestamp: -1 }).limit(100);
     }
 }
 

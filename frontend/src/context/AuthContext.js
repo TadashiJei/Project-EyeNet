@@ -45,13 +45,24 @@ export const AuthProvider = ({ children }) => {
         const token = localStorage.getItem('token');
         if (token) {
           const response = await api.get('/auth/me');
-          dispatch({
-            type: 'INITIALIZE',
-            payload: {
-              isAuthenticated: true,
-              user: response.data.user
-            }
-          });
+          if (response.data && response.data.user) {
+            dispatch({
+              type: 'INITIALIZE',
+              payload: {
+                isAuthenticated: true,
+                user: response.data.user
+              }
+            });
+          } else {
+             console.error("Invalid response from /auth/me:", response);
+            dispatch({
+              type: 'INITIALIZE',
+              payload: {
+                isAuthenticated: false,
+                user: null
+              }
+            });
+          }
         } else {
           dispatch({
             type: 'INITIALIZE',
@@ -62,6 +73,7 @@ export const AuthProvider = ({ children }) => {
           });
         }
       } catch (err) {
+        console.error("Error during auth initialization:", err);
         dispatch({
           type: 'INITIALIZE',
           payload: {

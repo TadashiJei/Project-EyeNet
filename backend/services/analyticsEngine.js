@@ -1,4 +1,4 @@
-const { NetworkUsage, IPAddress } = require('../models');
+const { NetworkTraffic, IPAddress } = require('../models');
 const { startOfDay, subDays, format, addDays } = require('date-fns');
 
 class AnalyticsEngine {
@@ -7,21 +7,21 @@ class AnalyticsEngine {
         const today = startOfDay(new Date());
         const lastWeek = subDays(today, 7);
 
-        const usageData = await NetworkUsage.find({
+        const usageData = await NetworkTraffic.find({
             departmentId,
             timestamp: { $gte: lastWeek }
         });
 
-        // Calculate mean and standard deviation of bytes used
-        const bytesArray = usageData.map(usage => usage.bytesUsed);
-        const mean = bytesArray.reduce((a, b) => a + b, 0) / bytesArray.length;
+        // Calculate mean and standard deviation of current bandwidth
+        const bandwidthArray = usageData.map(usage => usage.currentBandwidth);
+        const mean = bandwidthArray.reduce((a, b) => a + b, 0) / bandwidthArray.length;
         const stdDev = Math.sqrt(
-            bytesArray.reduce((sq, n) => sq + Math.pow(n - mean, 2), 0) / bytesArray.length
+            bandwidthArray.reduce((sq, n) => sq + Math.pow(n - mean, 2), 0) / bandwidthArray.length
         );
 
         // Detect anomalies using Z-score
         return usageData.filter(usage => {
-            const zScore = Math.abs((usage.bytesUsed - mean) / stdDev);
+            const zScore = Math.abs((usage.currentBandwidth - mean) / stdDev);
             return zScore > threshold;
         });
     }
@@ -30,7 +30,7 @@ class AnalyticsEngine {
     static async analyzeUsagePatterns(departmentId, days = 30) {
         const startDate = subDays(startOfDay(new Date()), days);
 
-        const usageData = await NetworkUsage.aggregate([
+        const usageData = await NetworkTraffic.aggregate([
             {
                 $match: {
                     departmentId,
@@ -41,9 +41,10 @@ class AnalyticsEngine {
                 $group: {
                     _id: {
                         hour: { $hour: '$timestamp' },
-                        dayOfWeek: { $dayOfWeek: '$timestamp' }
+                        dayOfWeek: { $dayOfWeek: '$timestamp' },
+                        activityType: '$activityType'
                     },
-                    avgUsage: { $avg: '$bytesUsed' },
+                    avgUsage: { $avg: '$currentBandwidth' },
                     count: { $sum: 1 }
                 }
             },
@@ -59,16 +60,16 @@ class AnalyticsEngine {
 
     // Website categorization using TF-IDF algorithm
     static async categorizeWebsites(departmentId) {
-        const websites = await NetworkUsage.aggregate([
+         const websites = await NetworkTraffic.aggregate([
             {
                 $match: { departmentId }
             },
             {
                 $group: {
-                    _id: '$websiteVisited',
+                    _id: '$applicationType',
                     totalVisits: { $sum: 1 },
-                    totalBytes: { $sum: '$bytesUsed' },
-                    categories: { $addToSet: '$category' }
+                    totalBytes: { $sum: '$dataConsumed' },
+                    categories: { $addToSet: '$applicationType' }
                 }
             }
         ]);
@@ -86,7 +87,7 @@ class AnalyticsEngine {
 
     // Predictive analysis using exponential smoothing
     static async predictFutureUsage(departmentId, daysToPredict = 7) {
-        const historicalData = await NetworkUsage.aggregate([
+        const historicalData = await NetworkTraffic.aggregate([
             {
                 $match: { departmentId }
             },
@@ -95,7 +96,7 @@ class AnalyticsEngine {
                     _id: {
                         date: { $dateToString: { format: '%Y-%m-%d', date: '$timestamp' } }
                     },
-                    totalBytes: { $sum: '$bytesUsed' }
+                    totalBytes: { $sum: '$currentBandwidth' }
                 }
             },
             {
@@ -127,23 +128,58 @@ class AnalyticsEngine {
         const [anomalies, patterns, websites] = metrics;
         
         // Calculate security score components
-        const anomalyScore = 100 - (anomalies.length * 5); // Deduct 5 points per anomaly
+        let anomalyScore = 100 - (anomalies.length * 5); // Deduct 5 points per anomaly
         const patternScore = this.calculatePatternScore(patterns);
         const websiteScore = this.calculateWebsiteScore(websites);
 
+        // Fetch additional data for security score
+        const networkData = await NetworkTraffic.findOne({ departmentId }).sort({ timestamp: -1 });
+        const latencyScore = networkData ? 100 - (networkData.latency * 2) : 100;
+        const packetLossScore = networkData ? 100 - (networkData.packetLoss * 5) : 100;
+        const connectionScore = networkData ? networkData.connectionStability * 100 : 100;
+        const thresholdScore = networkData ? 100 - (networkData.thresholdExceedance * 10) : 100;
+        const forecastScore = networkData ? 100 - (Math.abs(networkData.forecastDeviation) * 2) : 100;
+
         // Weighted average of scores
-        const securityScore = (
-            (anomalyScore * 0.4) +
-            (patternScore * 0.3) +
-            (websiteScore * 0.3)
+        let securityScore = (
+            (anomalyScore * 0.2) +
+            (patternScore * 0.2) +
+            (websiteScore * 0.2) +
+            (latencyScore * 0.1) +
+            (packetLossScore * 0.1) +
+            (connectionScore * 0.1) +
+            (thresholdScore * 0.05) +
+            (forecastScore * 0.05)
         );
+
+        // Apply user-defined policies
+        if (networkData && networkData.priorityLevel === 'high') {
+            securityScore += 5;
+        }
+        if (networkData && networkData.timeRestriction) {
+            try {
+                const restrictions = JSON.parse(networkData.timeRestriction);
+                const now = new Date();
+                const currentHour = now.getHours();
+                if (restrictions[currentHour] === false) {
+                    securityScore -= 10;
+                }
+            } catch (e) {
+                console.error("Error parsing time restrictions", e);
+            }
+        }
 
         return {
             overallScore: Math.max(0, Math.min(100, securityScore)),
             components: {
                 anomalyScore,
                 patternScore,
-                websiteScore
+                websiteScore,
+                latencyScore,
+                packetLossScore,
+                connectionScore,
+                thresholdScore,
+                forecastScore
             },
             details: {
                 anomaliesDetected: anomalies.length,
@@ -158,6 +194,7 @@ class AnalyticsEngine {
         return usageData.map(data => ({
             dayOfWeek: data._id.dayOfWeek,
             hour: data._id.hour,
+            activityType: data._id.activityType,
             avgUsage: data.avgUsage,
             confidence: this.calculateConfidence(data.count, data.avgUsage)
         }));

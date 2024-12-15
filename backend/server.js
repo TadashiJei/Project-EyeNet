@@ -24,7 +24,7 @@ const monitoringMiddleware = require('./middleware/monitoring');
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 5005;
+const port = process.env.PORT || 5011;
 
 // Construct backend URL
 const backendHost = process.env.BACKEND_URL || 'localhost';

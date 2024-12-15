@@ -2,6 +2,19 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
+    firstName: {
+        type: String,
+        required: [true, 'First name is required'],
+        trim: true
+    },
+    lastName: {
+        type: String,
+        required: [true, 'Last name is required'],
+        trim: true
+    },
+    birthdate: {
+        type: Date
+    },
     username: {
         type: String,
         required: [true, 'Username is required'],
@@ -43,6 +56,15 @@ const userSchema = new mongoose.Schema({
             webhookUrl: { type: String },
             minSeverity: { type: String, enum: ['info', 'warning', 'error', 'critical'], default: 'error' }
         }
+    },
+    homeAddress: {
+        type: String
+    },
+    country: {
+        type: String
+    },
+    phoneNumber: {
+        type: String
     },
     lastLogin: {
         type: Date

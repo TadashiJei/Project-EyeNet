@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     Box,
     Card,
@@ -50,11 +50,7 @@ const AdminPage = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterRole, setFilterRole] = useState('all');
 
-    useEffect(() => {
-        loadUsers();
-    }, [page, rowsPerPage, loadUsers]);
-
-    const loadUsers = async () => {
+    const loadUsers = useCallback(async () => {
         try {
             const data = await getAllUsers(page + 1, rowsPerPage);
             setUsers(data);
@@ -63,7 +59,11 @@ const AdminPage = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [page, rowsPerPage]);
+
+    useEffect(() => {
+        loadUsers();
+    }, [loadUsers]);
 
     const handleChangePage = (event, newPage) => {
         setPage(newPage);
