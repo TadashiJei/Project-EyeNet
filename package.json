@@ -1,0 +1,23 @@
+{
+  "name": "project-eyenet",
+  "version": "1.0.0",
+  "description": "Network Monitoring System",
+  "main": "index.js",
+  "scripts": {
+    "start": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "install-all": "concurrently \"npm install\" \"cd frontend && npm install\" \"cd backend && npm install\"",
+    "backend": "cd backend && npm start",
+    "frontend": "cd frontend && npm start",
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\""
+  },
+  "keywords": [
+    "network",
+    "monitoring",
+    "security"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

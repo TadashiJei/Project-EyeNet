@@ -1,33 +1,30 @@
+// frontend/src/App.jsx
 import React from 'react';
-import { useSelector } from 'react-redux';
-import { ThemeProvider } from '@mui/material/styles';
-import { CssBaseline, StyledEngineProvider } from '@mui/material';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-
-// routes
-import MainRoutes from './routes/MainRoutes';
-import AuthenticationRoutes from './routes/AuthenticationRoutes';
-
-// theme
-import { ThemeSettings } from './theme/Theme';
-
-// ==============================|| APP ||============================== //
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 
 const App = () => {
-  const theme = ThemeSettings();
-
   return (
-    <StyledEngineProvider injectFirst>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <Router>
-          <Routes>
-            <Route path="/*" element={<MainRoutes />} />
-            <Route path="/auth/*" element={<AuthenticationRoutes />} />
-          </Routes>
-        </Router>
-      </ThemeProvider>
-    </StyledEngineProvider>
+    <AuthProvider>
+      <Router>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/auth/*" element={<AuthenticationRoutes />} />
+          
+          {/* Protected Routes */}
+          <Route path="/dashboard/*" element={
+            <ProtectedRoute>
+              <MainRoutes />
+            </ProtectedRoute>
+          } />
+          
+          {/* Default Redirect */}
+          <Route path="/" element={<Navigate to="/auth/login" replace />} />
+          <Route path="*" element={<Navigate to="/auth/login" replace />} />
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 };
 

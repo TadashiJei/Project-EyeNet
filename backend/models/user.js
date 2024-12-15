@@ -117,6 +117,5 @@ userSchema.methods.shouldReceiveNotification = function(severity) {
     };
 };
 
-const User = mongoose.model('User', userSchema);
-
-module.exports = User;
+// Export the model only if it hasn't been compiled yet
+module.exports = mongoose.models.User || mongoose.model('User', userSchema);

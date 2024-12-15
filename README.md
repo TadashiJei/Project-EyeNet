@@ -63,19 +63,12 @@ git clone https://github.com/yourusername/Project-EyeNet.git
 cd Project-EyeNet
 ```
 
-2. Install frontend dependencies:
+2. Install all dependencies (frontend, backend, and root):
 ```bash
-cd frontend
-npm install
+npm run install-all
 ```
 
-3. Install backend dependencies:
-```bash
-cd ../backend
-npm install
-```
-
-4. Set up environment variables:
+3. Set up environment variables:
    - Create `.env` file in backend directory:
 ```env
 PORT=5005
@@ -84,22 +77,29 @@ JWT_SECRET=your_jwt_secret
 ```
    - Create `.env` file in frontend directory:
 ```env
-REACT_APP_API_URL=http://localhost:5005
+REACT_APP_API_URL=http://localhost:5005/api
 ```
 
-5. Start the development servers:
-   - Backend:
+4. Start both servers with a single command:
 ```bash
-cd backend
-npm start
-```
-   - Frontend:
-```bash
-cd frontend
 npm start
 ```
 
-The application will be available at `http://localhost:3004`
+This will concurrently run:
+- Backend server on port 5005
+- Frontend development server on port 3001
+
+You can access:
+- Frontend: http://localhost:3001
+- Backend API: http://localhost:5005/api
+- API Documentation: http://localhost:5005/api-docs
+
+### Development Mode
+
+To run both servers in development mode with hot-reloading:
+```bash
+npm run dev
+```
 
 ## Project Structure
 

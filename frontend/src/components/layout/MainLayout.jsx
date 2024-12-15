@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, CssBaseline, useTheme, Container, Typography, Stack, List, ListItem, ListItemIcon, ListItemText, Link } from '@mui/material';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
-import { IconActivity, IconDeviceLaptop, IconChartBar, IconSettings, IconFileAnalytics } from '@tabler/icons-react';
+import { IconDashboard, IconNetwork, IconChartBar, IconFileReport, IconSettings, IconUser, IconUsers } from '@tabler/icons-react';
 import Navigation from './Navigation';
 
 const DRAWER_WIDTH = 280;
@@ -70,31 +70,13 @@ const MainLayout = ({ children }) => {
     const location = useLocation();
 
     const menuItems = [
-        {
-            path: '/network-monitoring',
-            icon: <IconActivity size={20} />,
-            label: 'Network Monitoring'
-        },
-        {
-            path: '/device-management',
-            icon: <IconDeviceLaptop size={20} />,
-            label: 'Device Management'
-        },
-        {
-            path: '/analytics',
-            icon: <IconChartBar size={20} />,
-            label: 'Analytics'
-        },
-        {
-            path: '/reports',
-            icon: <IconFileAnalytics size={20} />,
-            label: 'Reports'
-        },
-        {
-            path: '/settings',
-            icon: <IconSettings size={20} />,
-            label: 'Settings'
-        }
+        { path: '/dashboard', icon: <IconDashboard size={20} />, text: 'Dashboard' },
+        { path: '/network', icon: <IconNetwork size={20} />, text: 'Network' },
+        { path: '/analytics', icon: <IconChartBar size={20} />, text: 'Analytics' },
+        { path: '/reports', icon: <IconFileReport size={20} />, text: 'Reports' },
+        { path: '/settings', icon: <IconSettings size={20} />, text: 'Settings' },
+        { path: '/profile', icon: <IconUser size={20} />, text: 'Profile' },
+        { path: '/admin', icon: <IconUsers size={20} />, text: 'Admin', role: 'admin' }
     ];
 
     return (
@@ -125,7 +107,7 @@ const MainLayout = ({ children }) => {
                                 {item.icon}
                             </ListItemIcon>
                             <ListItemText 
-                                primary={item.label}
+                                primary={item.text}
                                 primaryTypographyProps={{
                                     variant: 'body2'
                                 }}

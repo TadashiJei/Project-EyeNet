@@ -1,4 +1,5 @@
 import { lazy } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 
 // project imports
 import Loadable from '../components/Loadable';
@@ -11,23 +12,17 @@ const AuthForgotPassword = Loadable(lazy(() => import('../pages/auth/ForgotPassw
 
 // ==============================|| AUTHENTICATION ROUTING ||============================== //
 
-const AuthenticationRoutes = {
-  path: '/',
-  element: <MinimalLayout />,
-  children: [
-    {
-      path: '/login',
-      element: <AuthLogin />
-    },
-    {
-      path: '/register',
-      element: <AuthRegister />
-    },
-    {
-      path: '/forgot-password',
-      element: <AuthForgotPassword />
-    }
-  ]
+const AuthenticationRoutes = () => {
+  return (
+    <MinimalLayout>
+      <Routes>
+        <Route path="login" element={<AuthLogin />} />
+        <Route path="register" element={<AuthRegister />} />
+        <Route path="forgot-password" element={<AuthForgotPassword />} />
+        <Route path="*" element={<Navigate to="login" replace />} />
+      </Routes>
+    </MinimalLayout>
+  );
 };
 
 export default AuthenticationRoutes;

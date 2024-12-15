@@ -8,7 +8,6 @@ import { lightTheme, darkTheme } from './themes/theme';
 import MainLayout from './components/layout/MainLayout';
 
 // Pages
-import HomePage from './pages/HomePage';
 import NetworkMonitoringPage from './pages/NetworkMonitoringPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import ReportsPage from './pages/ReportsPage';
@@ -26,6 +25,10 @@ import SupportDocumentationPage from './pages/SupportDocumentationPage';
 import AboutUsPage from './pages/AboutUsPage';
 import Error500Page from './pages/Error500Page';
 import ErrorBoundary from './components/ErrorBoundary';
+import DashboardPage from './pages/DashboardPage';
+import SettingsPage from './pages/SettingsPage';
+import ProfilePage from './pages/ProfilePage';
+import AdminPage from './pages/AdminPage';
 
 const ThemedApp = () => {
     const { mode } = useThemeMode();
@@ -38,7 +41,8 @@ const ThemedApp = () => {
                 <ErrorBoundary>
                     <MainLayout>
                         <Routes>
-                            <Route path="/" element={<HomePage />} />
+                            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                            <Route path="/dashboard" element={<DashboardPage />} />
                             <Route path="/network-monitoring" element={<NetworkMonitoringPage />} />
                             <Route path="/analytics" element={<AnalyticsPage />} />
                             <Route path="/reports" element={<ReportsPage />} />
@@ -54,7 +58,10 @@ const ThemedApp = () => {
                             <Route path="/login" element={<LoginPage />} />
                             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                             <Route path="/reset-password/:token" element={<PasswordResetPage />} />
-                            <Route path="*" element={<Navigate to="/" replace />} />
+                            <Route path="/settings" element={<SettingsPage />} />
+                            <Route path="/profile" element={<ProfilePage />} />
+                            <Route path="/admin" element={<AdminPage />} />
+                            <Route path="*" element={<Navigate to="/dashboard" replace />} />
                             <Route path="/error-500" element={<Error500Page />} />
                         </Routes>
                     </MainLayout>

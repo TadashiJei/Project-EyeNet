@@ -151,6 +151,7 @@ const advancedAnalyticsRouter = require('./routes/advancedAnalytics');
 const networkMonitoringRoutes = require('./routes/networkMonitoring');
 const monitoringRouter = require('./routes/monitoring');
 const deviceRoutes = require('./routes/deviceRoutes');
+const authRoutes = require('./routes/authRoutes');
 
 // Use routes
 app.use('/api/users', usersRouter);
@@ -162,6 +163,7 @@ app.use('/api/advanced-analytics', advancedAnalyticsRouter);
 app.use('/api/monitoring', monitoringRouter);
 app.use('/api/network', networkMonitoringRoutes);
 app.use('/api/devices', deviceRoutes);
+app.use('/api/auth', authRoutes);
 
 // Basic Route
 app.get('/', (req, res) => {

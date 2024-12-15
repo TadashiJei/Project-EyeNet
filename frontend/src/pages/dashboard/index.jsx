@@ -17,10 +17,42 @@ import { gridSpacing } from '../../config';
 // ==============================|| DEFAULT DASHBOARD ||============================== //
 
 const Dashboard = () => {
-  const [isLoading, setLoading] = useState(true);
+  const navigate = useNavigate(); // Add this
+  const [isLoading, setIsLoading] = useState(true); // Add loading state
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
+  
   useEffect(() => {
-    setLoading(false);
-  }, []);
+    const fetchData = async () => {
+      try {
+        setIsLoading(true); // Start loading
+        const response = await api.get('/api/dashboard/data');
+        setData(response.data);
+        setError(null);
+      } catch (err) {
+        console.error('Dashboard Error:', err);
+        setError(err.message || 'Failed to load dashboard data');
+        if (err.response?.status === 403 || err.response?.status === 401) {
+          // Handle unauthorized access
+          navigate('/auth/login');
+        }
+      } finally {
+        setIsLoading(false); // End loading regardless of outcome
+      }
+    };
+    
+    fetchData();
+  }, [navigate]); // Add navigate to dependency array
+
+  if (error) {
+    return (
+      <Grid container justifyContent="center" alignItems="center" style={{ minHeight: '200px' }}>
+        <Grid item>
+          <div>Error: {error}</div>
+        </Grid>
+      </Grid>
+    );
+  }
 
   return (
     <Grid container spacing={gridSpacing}>
