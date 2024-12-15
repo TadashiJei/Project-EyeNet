@@ -22,7 +22,7 @@ const monitoringMiddleware = require('./middleware/monitoring');
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 5001;
+const port = process.env.PORT || 5005;
 
 // Construct backend URL
 const backendHost = process.env.BACKEND_URL || 'localhost';
@@ -137,21 +137,25 @@ connection.once('open', () => {
     console.log('MongoDB database connection established successfully');
 });
 
-// Routes
+// Import routes
 const usersRouter = require('./routes/users');
 const departmentsRouter = require('./routes/departments');
 const ipsRouter = require('./routes/ips');
 const reportsRouter = require('./routes/reports');
 const analyticsRouter = require('./routes/analytics');
 const advancedAnalyticsRouter = require('./routes/advancedAnalytics');
+const networkMonitoringRoutes = require('./routes/networkMonitoring');
+const monitoringRouter = require('./routes/monitoring');
 
+// Use routes
 app.use('/api/users', usersRouter);
 app.use('/api/departments', departmentsRouter);
 app.use('/api/ips', ipsRouter);
 app.use('/api/reports', reportsRouter);
 app.use('/api/analytics', analyticsRouter);
 app.use('/api/advanced-analytics', advancedAnalyticsRouter);
-app.use('/api/monitoring', require('./routes/monitoring'));
+app.use('/api/monitoring', monitoringRouter);
+app.use('/api/network', networkMonitoringRoutes);
 
 // Basic Route
 app.get('/', (req, res) => {

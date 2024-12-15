@@ -26,7 +26,15 @@ class MonitoringService extends EventEmitter {
             analytics: [],
             customMetrics: {}
         };
-        this.alertThresholds = this.loadThresholds();
+        this.alertThresholds = {
+            system: {
+                cpu: 80,
+                memory: 85,
+                diskSpace: 90
+            }
+        }; // Set default thresholds
+        // Initialize async
+        this.initializeAsync();
         this.notificationSettings = {
             email: {
                 enabled: process.env.ENABLE_EMAIL_NOTIFICATIONS === 'true',
@@ -34,6 +42,15 @@ class MonitoringService extends EventEmitter {
             }
         };
         this.startMonitoring();
+    }
+
+    async initializeAsync() {
+        try {
+            this.alertThresholds = await this.loadThresholds();
+        } catch (error) {
+            console.error('Failed to load thresholds:', error);
+            // Keep using default thresholds
+        }
     }
 
     async loadThresholds() {
@@ -277,11 +294,15 @@ class MonitoringService extends EventEmitter {
 
     checkAlerts() {
         const currentMetrics = this.metrics.system;
-        const apiMetrics = this.metrics.api;
         const eyeNetMetrics = this.metrics.eyenet;
 
         // System alerts
-        if (currentMetrics.memory?.usedPercent > this.alertThresholds.system.memory) {
+        if (!this.alertThresholds?.system) {
+            console.warn('Alert thresholds not properly initialized');
+            return;
+        }
+
+        if (currentMetrics?.memory?.usedPercent > this.alertThresholds.system.memory) {
             this.recordAlert('warning', 'High Memory Usage', 
                 `Memory usage at ${currentMetrics.memory.usedPercent.toFixed(2)}%`);
         }
@@ -290,21 +311,6 @@ class MonitoringService extends EventEmitter {
             this.recordAlert('warning', 'High CPU Usage', 
                 `CPU load at ${currentMetrics.cpu.loadAvg[0].toFixed(2)}%`);
         }
-
-        // API alerts
-        Object.entries(apiMetrics).forEach(([endpoint, metrics]) => {
-            const errorRate = (metrics.errors / metrics.count) * 100;
-            if (errorRate > this.alertThresholds.api.errorRate) {
-                this.recordAlert('error', 'High Error Rate', 
-                    `Endpoint ${endpoint} has ${errorRate.toFixed(2)}% error rate`);
-            }
-
-            const avgResponseTime = metrics.totalDuration / metrics.count;
-            if (avgResponseTime > this.alertThresholds.api.responseTime) {
-                this.recordAlert('warning', 'Slow Response Time', 
-                    `Endpoint ${endpoint} averaging ${avgResponseTime.toFixed(2)}ms`);
-            }
-        });
 
         // EyeNet specific alerts
         if (eyeNetMetrics.securityIncidents?.critical > 0) {
