@@ -1,7 +1,8 @@
 import React from 'react';
-import { Box, CssBaseline, useTheme, Container, Typography, Stack, Link } from '@mui/material';
+import { Box, CssBaseline, useTheme, Container, Typography, Stack, List, ListItem, ListItemIcon, ListItemText, Link } from '@mui/material';
+import { Link as RouterLink, useLocation } from 'react-router-dom';
+import { IconActivity, IconDeviceLaptop, IconChartBar, IconSettings, IconFileAnalytics } from '@tabler/icons-react';
 import Navigation from './Navigation';
-import { Outlet, Link as RouterLink } from 'react-router-dom';
 
 const DRAWER_WIDTH = 280;
 
@@ -64,13 +65,75 @@ const Footer = () => {
     );
 };
 
-const MainLayout = () => {
+const MainLayout = ({ children }) => {
     const theme = useTheme();
+    const location = useLocation();
+
+    const menuItems = [
+        {
+            path: '/network-monitoring',
+            icon: <IconActivity size={20} />,
+            label: 'Network Monitoring'
+        },
+        {
+            path: '/device-management',
+            icon: <IconDeviceLaptop size={20} />,
+            label: 'Device Management'
+        },
+        {
+            path: '/analytics',
+            icon: <IconChartBar size={20} />,
+            label: 'Analytics'
+        },
+        {
+            path: '/reports',
+            icon: <IconFileAnalytics size={20} />,
+            label: 'Reports'
+        },
+        {
+            path: '/settings',
+            icon: <IconSettings size={20} />,
+            label: 'Settings'
+        }
+    ];
 
     return (
         <Box sx={{ display: 'flex', minHeight: '100vh' }}>
             <CssBaseline />
-            <Navigation />
+            <Navigation>
+                <List component="nav">
+                    {menuItems.map((item) => (
+                        <ListItem
+                            button
+                            component={RouterLink}
+                            to={item.path}
+                            selected={location.pathname === item.path}
+                            key={item.path}
+                            sx={{
+                                mb: 0.5,
+                                py: 1.5,
+                                '&.Mui-selected': {
+                                    bgcolor: theme.palette.primary.lighter,
+                                    color: theme.palette.primary.main,
+                                    '&:hover': {
+                                        bgcolor: theme.palette.primary.lighter
+                                    }
+                                }
+                            }}
+                        >
+                            <ListItemIcon sx={{ minWidth: 36 }}>
+                                {item.icon}
+                            </ListItemIcon>
+                            <ListItemText 
+                                primary={item.label}
+                                primaryTypographyProps={{
+                                    variant: 'body2'
+                                }}
+                            />
+                        </ListItem>
+                    ))}
+                </List>
+            </Navigation>
             <Box
                 component="main"
                 sx={{
@@ -96,7 +159,7 @@ const MainLayout = () => {
                         }),
                     }}
                 >
-                    <Outlet />
+                    {children}
                 </Box>
                 <Footer />
             </Box>

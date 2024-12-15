@@ -9,6 +9,8 @@ const rateLimit = require('express-rate-limit');
 const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
 const hpp = require('hpp');
+const morgan = require('morgan');
+const compression = require('compression');
 
 const rateLimiter = require('./middleware/rateLimiter');
 const { requestLogger } = require('./middleware/logger');
@@ -93,6 +95,8 @@ app.use(express.json({ limit: '10kb' })); // Body parser with size limit
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(rateLimiter);
 app.use(requestLogger);
+app.use(morgan('dev'));
+app.use(compression());
 
 // Monitoring middleware - should be added before route handlers
 app.use(monitoringMiddleware);
@@ -146,6 +150,7 @@ const analyticsRouter = require('./routes/analytics');
 const advancedAnalyticsRouter = require('./routes/advancedAnalytics');
 const networkMonitoringRoutes = require('./routes/networkMonitoring');
 const monitoringRouter = require('./routes/monitoring');
+const deviceRoutes = require('./routes/deviceRoutes');
 
 // Use routes
 app.use('/api/users', usersRouter);
@@ -156,14 +161,26 @@ app.use('/api/analytics', analyticsRouter);
 app.use('/api/advanced-analytics', advancedAnalyticsRouter);
 app.use('/api/monitoring', monitoringRouter);
 app.use('/api/network', networkMonitoringRoutes);
+app.use('/api/devices', deviceRoutes);
 
 // Basic Route
 app.get('/', (req, res) => {
     res.send('Hello from the EyeNet backend!');
 });
 
-// Error Handler
-app.use(errorHandler);
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({
+        message: 'Something went wrong!',
+        error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+});
+
+// 404 handler
+app.use((req, res) => {
+    res.status(404).json({ message: 'Route not found' });
+});
 
 // Start Server
 app.listen(port, () => {

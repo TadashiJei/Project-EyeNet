@@ -50,6 +50,18 @@ const getAlertColor = (severity) => {
     }
 };
 
+const getTimeAgo = (timestamp) => {
+    try {
+        if (!timestamp) return 'Unknown time';
+        const date = new Date(timestamp);
+        if (isNaN(date.getTime())) return 'Invalid date';
+        return formatDistanceToNow(date, { addSuffix: true });
+    } catch (error) {
+        console.error('Error formatting date:', error);
+        return 'Invalid date';
+    }
+};
+
 const NetworkAlerts = () => {
     const theme = useTheme();
     const [alerts, setAlerts] = useState([]);
@@ -191,7 +203,7 @@ const NetworkAlerts = () => {
                                                     variant="caption"
                                                     color="textSecondary"
                                                 >
-                                                    {formatDistanceToNow(new Date(alert.createdAt), { addSuffix: true })}
+                                                    {getTimeAgo(alert.createdAt)}
                                                 </Typography>
                                             </Box>
                                         }

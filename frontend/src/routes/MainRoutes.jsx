@@ -9,7 +9,8 @@ import Loadable from '../components/Loadable';
 const DashboardDefault = Loadable(lazy(() => import('../pages/dashboard')));
 
 // monitoring routing
-const Monitoring = Loadable(lazy(() => import('../pages/monitoring')));
+const NetworkMonitoring = Loadable(lazy(() => import('../pages/NetworkMonitoringPage')));
+const DeviceManagement = Loadable(lazy(() => import('../pages/DeviceManagementPage')));
 
 // settings routing
 const Settings = Loadable(lazy(() => import('../pages/settings')));
@@ -17,30 +18,34 @@ const Settings = Loadable(lazy(() => import('../pages/settings')));
 // ==============================|| MAIN ROUTING ||============================== //
 
 const MainRoutes = {
-  path: '/',
-  element: (
-    <AuthGuard>
-      <MainLayout />
-    </AuthGuard>
-  ),
-  children: [
-    {
-      path: '/',
-      element: <DashboardDefault />
-    },
-    {
-      path: 'dashboard',
-      element: <DashboardDefault />
-    },
-    {
-      path: 'monitoring',
-      element: <Monitoring />
-    },
-    {
-      path: 'settings',
-      element: <Settings />
-    }
-  ]
+    path: '/',
+    element: (
+        <AuthGuard>
+            <MainLayout />
+        </AuthGuard>
+    ),
+    children: [
+        {
+            path: '/',
+            element: <DashboardDefault />
+        },
+        {
+            path: 'dashboard',
+            element: <DashboardDefault />
+        },
+        {
+            path: 'network-monitoring',
+            element: <NetworkMonitoring />
+        },
+        {
+            path: 'device-management',
+            element: <DeviceManagement />
+        },
+        {
+            path: 'settings',
+            element: <Settings />
+        }
+    ]
 };
 
 export default MainRoutes;

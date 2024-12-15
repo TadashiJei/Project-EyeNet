@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     Box,
     Grid,
@@ -7,11 +7,17 @@ import {
     Typography,
     Tab,
     Tabs,
-    useTheme,
     Stack,
     IconButton,
     Tooltip,
-    LinearProgress
+    Select,
+    MenuItem,
+    FormControl,
+    InputLabel,
+    CircularProgress,
+    Alert,
+    Divider,
+    Button
 } from '@mui/material';
 import {
     IconRefresh,
@@ -20,147 +26,299 @@ import {
     IconChartBar,
     IconDevices,
     IconActivity,
-    IconBrain
+    IconBrain,
+    IconClockHour4
 } from '@tabler/icons-react';
+import {
+    fetchBandwidthUsage,
+    fetchApplicationUsage,
+    fetchPredictiveAnalytics,
+    fetchNetworkHealth,
+    fetchTopDevices,
+    fetchAnomalies,
+    initializeWebSocket
+} from '../services/analyticsService';
 
-const AnalyticsCard = ({ title, value, subtitle, progress, icon: Icon, color }) => {
-    const theme = useTheme();
-    return (
-        <Card sx={{ height: '100%' }}>
-            <CardContent>
-                <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                    <Box>
-                        <Typography variant="h6" gutterBottom>
-                            {title}
-                        </Typography>
-                        <Typography variant="h4" gutterBottom>
-                            {value}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            {subtitle}
-                        </Typography>
-                    </Box>
-                    <Box
-                        sx={{
-                            p: 1,
-                            borderRadius: 2,
-                            bgcolor: `${color}.lighter`,
-                            color: `${color}.main`
-                        }}
-                    >
-                        <Icon size={24} />
-                    </Box>
-                </Stack>
-                {progress !== undefined && (
-                    <Box sx={{ mt: 2 }}>
-                        <LinearProgress
-                            variant="determinate"
-                            value={progress}
-                            sx={{
-                                height: 6,
-                                borderRadius: 3,
-                                bgcolor: `${color}.lighter`,
-                                '& .MuiLinearProgress-bar': {
-                                    bgcolor: `${color}.main`,
-                                    borderRadius: 3
-                                }
-                            }}
-                        />
-                    </Box>
-                )}
-            </CardContent>
-        </Card>
-    );
-};
+// Component imports
+import BandwidthUsageChart from '../components/analytics/BandwidthUsageChart';
+import ApplicationUsageChart from '../components/analytics/ApplicationUsageChart';
+import PredictiveAnalytics from '../components/analytics/PredictiveAnalytics';
+import AnalyticsCard from '../components/analytics/AnalyticsCard';
+import AnomaliesTimeline from '../components/analytics/AnomaliesTimeline';
+import TopDevicesTable from '../components/analytics/TopDevicesTable';
 
 const AnalyticsPage = () => {
-    const theme = useTheme();
     const [activeTab, setActiveTab] = useState(0);
+    const [timeRange, setTimeRange] = useState('24h');
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [interval, setInterval] = useState('1h');
+    const [topDevices, setTopDevices] = useState([]);
+    const [anomalies, setAnomalies] = useState([]);
+    const [networkHealth, setNetworkHealth] = useState(null);
+
+    const [bandwidthData, setBandwidthData] = useState({
+        labels: [],
+        datasets: [
+            {
+                label: 'Inbound Traffic',
+                data: [],
+                borderColor: 'rgb(53, 162, 235)',
+                backgroundColor: 'rgba(53, 162, 235, 0.5)',
+            },
+            {
+                label: 'Outbound Traffic',
+                data: [],
+                borderColor: 'rgb(255, 99, 132)',
+                backgroundColor: 'rgba(255, 99, 132, 0.5)',
+            },
+        ],
+    });
+
+    const [appUsageData, setAppUsageData] = useState({
+        labels: [],
+        datasets: [
+            {
+                label: 'Data Usage',
+                data: [],
+                backgroundColor: 'rgba(53, 162, 235, 0.5)',
+            },
+        ],
+    });
+
+    const [predictiveData, setPredictiveData] = useState([]);
 
     const analyticsCards = [
         {
             title: 'Total Bandwidth',
-            value: '2.4 TB',
-            subtitle: '15% increase from last month',
-            progress: 75,
+            value: networkHealth ? `${(networkHealth.totalBandwidth / (1024 * 1024 * 1024)).toFixed(1)} TB` : '...',
+            subtitle: networkHealth ? `${networkHealth.bandwidthTrend}% from last month` : '',
+            progress: networkHealth ? networkHealth.bandwidthUtilization : 0,
             icon: IconChartBar,
             color: 'primary'
         },
         {
             title: 'Active Devices',
-            value: '1,245',
-            subtitle: '50 new devices this week',
-            progress: 60,
+            value: networkHealth ? networkHealth.activeDevices.toString() : '...',
+            subtitle: networkHealth ? `${networkHealth.deviceTrend}% from last week` : '',
+            progress: networkHealth ? (networkHealth.activeDevices / networkHealth.totalDevices) * 100 : 0,
             icon: IconDevices,
-            color: 'info'
-        },
-        {
-            title: 'Network Activity',
-            value: '89%',
-            subtitle: 'Peak hours: 2PM - 4PM',
-            progress: 89,
-            icon: IconActivity,
-            color: 'warning'
-        },
-        {
-            title: 'AI Predictions',
-            value: '95%',
-            subtitle: 'Accuracy in anomaly detection',
-            progress: 95,
-            icon: IconBrain,
             color: 'success'
+        },
+        {
+            title: 'Network Health',
+            value: networkHealth ? `${networkHealth.score}%` : '...',
+            subtitle: networkHealth ? networkHealth.status : '',
+            progress: networkHealth ? networkHealth.score : 0,
+            icon: IconActivity,
+            color: networkHealth && networkHealth.score > 90 ? 'success' : networkHealth && networkHealth.score > 70 ? 'warning' : 'error'
+        },
+        {
+            title: 'AI Insights',
+            value: anomalies.length.toString(),
+            subtitle: 'Active anomalies',
+            progress: anomalies.length > 0 ? 100 : 0,
+            icon: IconBrain,
+            color: anomalies.length > 5 ? 'error' : anomalies.length > 2 ? 'warning' : 'success'
         }
     ];
 
-    const tabs = [
-        { label: 'Overview', value: 0 },
-        { label: 'Bandwidth Usage', value: 1 },
-        { label: 'Application Usage', value: 2 },
-        { label: 'Predictive Analytics', value: 3 }
-    ];
+    const fetchData = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const [
+                bandwidthUsage,
+                appUsage,
+                predictions,
+                health,
+                devices,
+                anomaliesData
+            ] = await Promise.all([
+                fetchBandwidthUsage(timeRange, interval),
+                fetchApplicationUsage(timeRange),
+                fetchPredictiveAnalytics(),
+                fetchNetworkHealth(),
+                fetchTopDevices(),
+                fetchAnomalies(timeRange)
+            ]);
+
+            // Update bandwidth data
+            setBandwidthData({
+                labels: bandwidthUsage.map(item => item._id),
+                datasets: [
+                    {
+                        label: 'Inbound Traffic',
+                        data: bandwidthUsage.map(item => item.inbound / (1024 * 1024 * 1024)),
+                        borderColor: 'rgb(53, 162, 235)',
+                        backgroundColor: 'rgba(53, 162, 235, 0.5)',
+                    },
+                    {
+                        label: 'Outbound Traffic',
+                        data: bandwidthUsage.map(item => item.outbound / (1024 * 1024 * 1024)),
+                        borderColor: 'rgb(255, 99, 132)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                    },
+                ],
+            });
+
+            // Update application usage data
+            setAppUsageData({
+                labels: appUsage.map(item => item._id),
+                datasets: [
+                    {
+                        label: 'Data Usage',
+                        data: appUsage.map(item => item.totalBytes / (1024 * 1024 * 1024)),
+                        backgroundColor: 'rgba(53, 162, 235, 0.5)',
+                    },
+                ],
+            });
+
+            // Update predictive analytics
+            setPredictiveData([
+                {
+                    metric: 'Bandwidth Usage',
+                    current: predictions.bandwidthUsage.current,
+                    predicted: predictions.bandwidthUsage.predicted,
+                    trend: predictions.bandwidthUsage.trend
+                },
+                {
+                    metric: 'Active Users',
+                    current: predictions.activeUsers.current,
+                    predicted: predictions.activeUsers.predicted,
+                    trend: predictions.activeUsers.trend
+                },
+                {
+                    metric: 'Network Latency',
+                    current: predictions.networkLatency.current,
+                    predicted: predictions.networkLatency.predicted,
+                    trend: predictions.networkLatency.trend
+                },
+                {
+                    metric: 'Packet Loss',
+                    current: predictions.packetLoss.current,
+                    predicted: predictions.packetLoss.predicted,
+                    trend: predictions.packetLoss.trend
+                }
+            ]);
+
+            setNetworkHealth(health);
+            setTopDevices(devices);
+            setAnomalies(anomaliesData);
+
+        } catch (err) {
+            setError(err.message);
+            console.error('Error fetching analytics data:', err);
+        } finally {
+            setLoading(false);
+        }
+    }, [timeRange, interval]);
+
+    // Initialize data and WebSocket connection
+    useEffect(() => {
+        fetchData();
+
+        // Set up WebSocket for real-time updates
+        const cleanup = initializeWebSocket((data) => {
+            switch (data.type) {
+                case 'bandwidth':
+                    setBandwidthData(prevData => ({
+                        ...prevData,
+                        datasets: [
+                            {
+                                ...prevData.datasets[0],
+                                data: [...prevData.datasets[0].data.slice(1), data.inbound / (1024 * 1024 * 1024)]
+                            },
+                            {
+                                ...prevData.datasets[1],
+                                data: [...prevData.datasets[1].data.slice(1), data.outbound / (1024 * 1024 * 1024)]
+                            }
+                        ]
+                    }));
+                    break;
+                case 'anomaly':
+                    setAnomalies(prev => [data.anomaly, ...prev].slice(0, 10));
+                    break;
+                case 'health':
+                    setNetworkHealth(data.health);
+                    break;
+                default:
+                    break;
+            }
+        });
+
+        // Poll for updates every minute
+        const pollInterval = setInterval(fetchData, 60000);
+
+        return () => {
+            cleanup();
+            clearInterval(pollInterval);
+        };
+    }, [fetchData]);
+
+    const handleRefresh = () => {
+        fetchData();
+    };
 
     return (
-        <Box sx={{ height: '100%', p: 3 }}>
-            {/* Header */}
-            <Box
-                sx={{
-                    mb: 3,
-                    display: 'flex',
-                    flexDirection: { xs: 'column', sm: 'row' },
-                    justifyContent: 'space-between',
-                    alignItems: { xs: 'flex-start', sm: 'center' },
-                    gap: 2
-                }}
-            >
-                <Box>
-                    <Typography variant="h4" gutterBottom>
-                        Network Analytics
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        Comprehensive analysis of your network performance and usage patterns
-                    </Typography>
-                </Box>
-                <Stack direction="row" spacing={1}>
-                    <Tooltip title="Refresh data">
-                        <IconButton>
-                            <IconRefresh />
+        <Box sx={{ p: 3 }}>
+            {error && (
+                <Alert severity="error" sx={{ mb: 3 }}>
+                    Error loading analytics data: {error}
+                </Alert>
+            )}
+
+            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
+                <Typography variant="h4">Analytics Dashboard</Typography>
+                <Stack direction="row" spacing={2}>
+                    <FormControl size="small">
+                        <InputLabel>Time Range</InputLabel>
+                        <Select
+                            value={timeRange}
+                            label="Time Range"
+                            onChange={(e) => setTimeRange(e.target.value)}
+                            sx={{ minWidth: 120 }}
+                        >
+                            <MenuItem value="1h">Last Hour</MenuItem>
+                            <MenuItem value="24h">Last 24 Hours</MenuItem>
+                            <MenuItem value="7d">Last 7 Days</MenuItem>
+                            <MenuItem value="30d">Last 30 Days</MenuItem>
+                        </Select>
+                    </FormControl>
+                    <FormControl size="small">
+                        <InputLabel>Interval</InputLabel>
+                        <Select
+                            value={interval}
+                            label="Interval"
+                            onChange={(e) => setInterval(e.target.value)}
+                            sx={{ minWidth: 120 }}
+                        >
+                            <MenuItem value="5m">5 Minutes</MenuItem>
+                            <MenuItem value="15m">15 Minutes</MenuItem>
+                            <MenuItem value="1h">1 Hour</MenuItem>
+                            <MenuItem value="6h">6 Hours</MenuItem>
+                            <MenuItem value="1d">1 Day</MenuItem>
+                        </Select>
+                    </FormControl>
+                    <Tooltip title="Refresh Data">
+                        <IconButton onClick={handleRefresh} disabled={loading}>
+                            <IconRefresh size={20} />
                         </IconButton>
                     </Tooltip>
-                    <Tooltip title="Export data">
+                    <Tooltip title="Download Report">
                         <IconButton>
-                            <IconDownload />
+                            <IconDownload size={20} />
                         </IconButton>
                     </Tooltip>
                     <Tooltip title="Filter">
                         <IconButton>
-                            <IconFilter />
+                            <IconFilter size={20} />
                         </IconButton>
                     </Tooltip>
                 </Stack>
-            </Box>
+            </Stack>
 
-            {/* Analytics Cards */}
-            <Grid container spacing={3} sx={{ mb: 3 }}>
+            <Grid container spacing={3} mb={3}>
                 {analyticsCards.map((card, index) => (
                     <Grid item xs={12} sm={6} md={3} key={index}>
                         <AnalyticsCard {...card} />
@@ -168,41 +326,93 @@ const AnalyticsPage = () => {
                 ))}
             </Grid>
 
-            {/* Tabs */}
-            <Box sx={{ mb: 3 }}>
-                <Tabs
-                    value={activeTab}
-                    onChange={(e, newValue) => setActiveTab(newValue)}
-                    variant="scrollable"
-                    scrollButtons="auto"
-                    sx={{
-                        px: 2,
-                        py: 1,
-                        bgcolor: theme.palette.background.paper,
-                        borderRadius: 1
-                    }}
-                >
-                    {tabs.map((tab) => (
-                        <Tab key={tab.value} label={tab.label} />
-                    ))}
-                </Tabs>
-            </Box>
+            <Grid container spacing={3} mb={3}>
+                <Grid item xs={12} md={8}>
+                    <Card>
+                        <CardContent>
+                            <Typography variant="h6" gutterBottom>
+                                Network Traffic
+                            </Typography>
+                            {loading ? (
+                                <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                                    <CircularProgress />
+                                </Box>
+                            ) : (
+                                <BandwidthUsageChart data={bandwidthData} />
+                            )}
+                        </CardContent>
+                    </Card>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                    <Card sx={{ height: '100%' }}>
+                        <CardContent>
+                            <Typography variant="h6" gutterBottom>
+                                Top Applications
+                            </Typography>
+                            {loading ? (
+                                <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                                    <CircularProgress />
+                                </Box>
+                            ) : (
+                                <ApplicationUsageChart data={appUsageData} />
+                            )}
+                        </CardContent>
+                    </Card>
+                </Grid>
+            </Grid>
 
-            {/* Tab Content */}
-            <Box sx={{ mt: 3 }}>
-                {activeTab === 0 && (
-                    <Typography>Overview content will be displayed here</Typography>
-                )}
-                {activeTab === 1 && (
-                    <Typography>Bandwidth usage analysis will be displayed here</Typography>
-                )}
-                {activeTab === 2 && (
-                    <Typography>Application usage statistics will be displayed here</Typography>
-                )}
-                {activeTab === 3 && (
-                    <Typography>AI-powered predictions will be displayed here</Typography>
-                )}
-            </Box>
+            <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                    <Card>
+                        <CardContent>
+                            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+                                <Typography variant="h6">
+                                    Top Devices
+                                </Typography>
+                                <Button
+                                    variant="outlined"
+                                    size="small"
+                                    endIcon={<IconDevices size={16} />}
+                                >
+                                    View All
+                                </Button>
+                            </Stack>
+                            {loading ? (
+                                <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                                    <CircularProgress />
+                                </Box>
+                            ) : (
+                                <TopDevicesTable devices={topDevices} />
+                            )}
+                        </CardContent>
+                    </Card>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                    <Card>
+                        <CardContent>
+                            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+                                <Typography variant="h6">
+                                    Network Anomalies
+                                </Typography>
+                                <Button
+                                    variant="outlined"
+                                    size="small"
+                                    endIcon={<IconClockHour4 size={16} />}
+                                >
+                                    View History
+                                </Button>
+                            </Stack>
+                            {loading ? (
+                                <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                                    <CircularProgress />
+                                </Box>
+                            ) : (
+                                <AnomaliesTimeline anomalies={anomalies} />
+                            )}
+                        </CardContent>
+                    </Card>
+                </Grid>
+            </Grid>
         </Box>
     );
 };
